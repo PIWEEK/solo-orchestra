@@ -4,6 +4,7 @@ import { BrowserModule } from '@angular/platform-browser';
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { MidiSystemService } from './midi-system.service';
+import { MidiPlayerService } from './midi-player.service';
 
 @NgModule({
   declarations: [
@@ -14,7 +15,8 @@ import { MidiSystemService } from './midi-system.service';
     AppRoutingModule
   ],
   providers: [
-    MidiSystemService
+    MidiSystemService,
+    MidiPlayerService
   ],
   bootstrap: [AppComponent]
 })

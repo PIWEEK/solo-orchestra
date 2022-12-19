@@ -3,6 +3,14 @@
 
 import { Injectable } from '@angular/core';
 
+// Light wrapper of webmidi interface.
+
+export interface MidiOptions {
+  outputName: string;
+  channelMap?: Map<number, number>;
+}
+
+
 @Injectable({
   providedIn: 'root'
 })
@@ -21,6 +29,16 @@ export class MidiSystemService {
         );
     } else {
       console.error("This browser does not support MIDI.");
+    }
+  }
+
+  public shutdown() {
+    console.log("SHUTDOWN");
+    for (const output of this.getOutputs()) {
+      for (let channel = 0; channel < 16; channel++) {
+        const allNotesOff = [0xB0 | (channel & 0x0F), 123, 0];
+        output.send(allNotesOff);
+      }
     }
   }
 
@@ -92,16 +110,28 @@ export class MidiSystemService {
     console.log(msg, result.trim());
   }
 
-  public sendMessage(output: WebMidi.MIDIOutput, message: Uint8Array | number[]) {
+  public sendMessage(output: WebMidi.MIDIOutput,
+                     message: Uint8Array | number[],
+                     options: MidiOptions | undefined) {
     this.traceMessage("SEND MESSAGE",  message);
     if (message[0] >= 0x80 && message[0] < 0xF0) {
       let channel = (message[0] & 0x0F) + 1;
-      console.log(message, "   ", channel);
-      if (channel == 1) {
-        channel = 6;
-      }
+      channel = this.mapChannel(channel, options);
       message[0] = (message[0] & 0xF0) | ((channel - 1) & 0x0F);
     }
     output.send(message);
+  }
+
+  private mapChannel(channel: number, options: MidiOptions | undefined): number {
+    if (options === undefined || options.channelMap === undefined) {
+      return channel;
+    } else {
+      let newChannel = options.channelMap.get(channel);
+      if (newChannel === undefined) {
+        return channel;
+      } else {
+        return newChannel;
+      }
+    }
   }
 }
