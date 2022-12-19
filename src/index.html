@@ -2,10 +2,19 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>SoloOrchestra</title>
+  <title>Solo Orchestra</title>
   <base href="/">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <script>
+  if (global === undefined || process === undefined) {
+    var global = window;
+    var Buffer = Buffer || [];
+    window['process'] = {
+      env: { DEBUG: undefined },
+    };
+  }
+  </script>
 </head>
 <body>
   <app-root></app-root>
