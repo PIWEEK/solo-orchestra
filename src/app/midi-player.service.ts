@@ -21,12 +21,10 @@ export class MidiPlayerService {
 export class AngularMidiPlayer {
   private player: MidiPlayer.Player;
   private output: WebMidi.MIDIOutput | undefined;
-  private channelMap: Map<number, number>;
 
   constructor(private midiSystem: MidiSystemService, private options: MidiOptions) {
     this.player = new MidiPlayer.Player();
-    setTimeout(this.getOutput.bind(this), 1000);
-    this.channelMap = options.channelMap || new Map();
+    setTimeout(this.getDevices.bind(this), 1000);
 
     this.player.on("midiEvent", (event: MidiPlayer.Event) => {
       const message = this.event2Message(event);
@@ -54,17 +52,19 @@ export class AngularMidiPlayer {
     reader.readAsArrayBuffer(file);
   }
 
-  private getOutput(outputName: string) {
-    this.output = this.midiSystem.findOutput(this.options.outputName);
+  private getDevices() {
+    if (this.options.outputName) {
+      this.output = this.midiSystem.findOutput(this.options.outputName);
+    }
   }
 
   private event2Message(event: MidiPlayer.Event): number[] | undefined {
     if (event.name.startsWith("Note")) {
-      console.log("NOTE " + event.name, event.noteNumber, event.velocity);
+      console.log(event.name.toUpperCase(), event.noteNumber, event.velocity);
     } else if (event.name.startsWith("Pitch Bend")) {
       console.log("PITCH BEND ", event.channel, event.value, event.velocity);
     } else {
-      console.log("NOTE " + event.name, event);
+      console.log("EVENT " + event.name, event);
     }
 
     let message = undefined;

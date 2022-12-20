@@ -6,7 +6,8 @@ import { Injectable } from '@angular/core';
 // Light wrapper of webmidi interface.
 
 export interface MidiOptions {
-  outputName: string;
+  inputName?: string;
+  outputName?: string;
   channelMap?: Map<number, number>;
 }
 
