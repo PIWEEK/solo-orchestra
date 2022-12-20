@@ -21,6 +21,7 @@ export class MidiPlayerService {
 export class AngularMidiPlayer {
   private player: MidiPlayer.Player;
   private output: WebMidi.MIDIOutput | undefined;
+  private activeNotes: any[] = [];
 
   constructor(private midiSystem: MidiSystemService, private options: MidiOptions) {
     this.player = new MidiPlayer.Player();
@@ -28,9 +29,14 @@ export class AngularMidiPlayer {
 
     this.player.on("midiEvent", (event: MidiPlayer.Event) => {
       const message = this.event2Message(event);
-      if (message && this.output) {
+      if (message && this.output && this.player.isPlaying()) {
         this.midiSystem.sendMessage(this.output, message, this.options);
       }
+    });
+
+    this.player.on("endOfFile", (event: MidiPlayer.Event) => {
+      console.log("END OF SONG");
+      this.stopActiveNotes();
     });
   }
 
@@ -75,12 +81,18 @@ export class AngularMidiPlayer {
         event.noteNumber! & 0x7F,
         event.velocity! & 0x7F
       ];
+      if (event.velocity! > 0) {
+        this.addActiveNote(event.channel!, event.noteNumber!);
+      } else {
+        this.removeActiveNote(event.channel!, event.noteNumber!);
+      }
     } else if (event.name == "Note off") {
       message = [
         0x80 | ((event.channel! - 1) & 0x0F),
         event.noteNumber! & 0x7F,
         event.velocity! & 0x7F
       ];
+      this.removeActiveNote(event.channel!, event.noteNumber!);
     } else if (event.name == "Pitch Bend") {
       if (event.channel && event.velocity) {
         message = [
@@ -99,5 +111,28 @@ export class AngularMidiPlayer {
     }
 
     return message;
+  }
+
+  private addActiveNote(channel: number, noteNumber: number) {
+    this.activeNotes.push({channel, noteNumber});
+  }
+
+  private removeActiveNote(channel: number, noteNumber: number) {
+    this.activeNotes = this.activeNotes.filter(
+      (note) => (note.channel != channel || note.noteNumber != noteNumber)
+    );
+  }
+
+  private stopActiveNotes() {
+    if (this.output) {
+      for (let note of this.activeNotes) {
+        const message = [
+          0x80 | ((note.channel - 1) & 0x0F),
+          note.noteNumber & 0x7F,
+          0
+        ];
+        this.midiSystem.sendMessage(this.output, message, this.options);
+      }
+    }
   }
 }
