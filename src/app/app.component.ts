@@ -1,41 +1,30 @@
 import { Component, OnInit, HostListener } from "@angular/core";
 import { MidiSystemService } from "./midi-system.service";
 import { MidiMapperService } from "./midi-mapper.service";
-import { MidiPlayerService } from "./midi-player.service";
+import { MidiPlayerService, AngularMidiPlayer } from "./midi-player.service";
+import { PerformanceService } from "./performance.service";
 
 @Component({
   selector: "app-root",
   templateUrl: "./app.component.html",
   styleUrls: ["./app.component.sass"]
 })
-export class AppComponent {//implements OnInit {
-  public title = "solo-orchestra";
-  private mapper1;
-  private player1;
-  private player2;
-  private input: WebMidi.MIDIInput | undefined;
-  private output: WebMidi.MIDIOutput | undefined;
+export class AppComponent {
+  private player1: AngularMidiPlayer ;
+  private player2: AngularMidiPlayer;
 
   constructor(private midiSystem: MidiSystemService,
               private midiMapper: MidiMapperService,
-              private midiPlayer: MidiPlayerService) {
-    // this.midiSystem.listPorts();
-    // this.midiSystem.showPorts();
-    this.mapper1 = midiMapper.getMapper({
-      inputName: "CHMidi-2.3 MIDI 1",
-      outputName: "Synth input port (Qsynth1:0)",
-      channelMap: new Map([
-        // [1, 3],
-      ]),
-    });
+              private midiPlayer: MidiPlayerService,
+              private performance: PerformanceService) {
     this.player1 = midiPlayer.getPlayer({
       outputName: "Synth input port (Qsynth1:0)",
     });
     this.player2 = midiPlayer.getPlayer({
       outputName: "Synth input port (Qsynth1:0)",
-      channelMap: new Map([
-        [1, 5],
-      ]),
+      // channelMap: new Map([
+      //   [1, 5],
+      // ]),
     });
   }
 

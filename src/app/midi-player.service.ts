@@ -20,17 +20,15 @@ export class MidiPlayerService {
 
 export class AngularMidiPlayer {
   private player: MidiPlayer.Player;
-  private output: WebMidi.MIDIOutput | undefined;
   private activeNotes: any[] = [];
 
   constructor(private midiSystem: MidiSystemService, private options: MidiOptions) {
     this.player = new MidiPlayer.Player();
-    setTimeout(this.getDevices.bind(this), 1000);
 
     this.player.on("midiEvent", (event: MidiPlayer.Event) => {
       const message = this.event2Message(event);
-      if (message && this.output && this.player.isPlaying()) {
-        this.midiSystem.sendMessage(this.output, message, this.options);
+      if (message && this.player.isPlaying()) {
+        this.midiSystem.sendMessage(undefined, message, []);
       }
     });
 
@@ -56,12 +54,6 @@ export class AngularMidiPlayer {
     };
 
     reader.readAsArrayBuffer(file);
-  }
-
-  private getDevices() {
-    if (this.options.outputName) {
-      this.output = this.midiSystem.findOutput(this.options.outputName);
-    }
   }
 
   private event2Message(event: MidiPlayer.Event): number[] | undefined {
@@ -124,15 +116,13 @@ export class AngularMidiPlayer {
   }
 
   private stopActiveNotes() {
-    if (this.output) {
-      for (let note of this.activeNotes) {
-        const message = [
-          0x80 | ((note.channel - 1) & 0x0F),
-          note.noteNumber & 0x7F,
-          0
-        ];
-        this.midiSystem.sendMessage(this.output, message, this.options);
-      }
+    for (let note of this.activeNotes) {
+      const message = [
+        0x80 | ((note.channel - 1) & 0x0F),
+        note.noteNumber & 0x7F,
+        0
+      ];
+      this.midiSystem.sendMessage(undefined, message, []);
     }
   }
 }

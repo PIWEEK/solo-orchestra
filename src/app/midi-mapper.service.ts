@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 
-import { MidiSystemService, MidiOptions } from './midi-system.service';
+import { MidiSystemService, Device, DeviceList, MapList } from "./midi-system.service";
 
 @Injectable({
   providedIn: 'root'
@@ -9,36 +9,27 @@ export class MidiMapperService {
 
   constructor(private midiSystem: MidiSystemService) {}
 
-  public getMapper(options: MidiOptions): AngularMidiMapper {
-    return new AngularMidiMapper(this.midiSystem, options);
+  public getMapper(inputs: DeviceList, maps: MapList): AngularMidiMapper {
+    return new AngularMidiMapper(this.midiSystem, inputs, maps);
   }
 }
 
 
 export class AngularMidiMapper {
-  private input: WebMidi.MIDIInput | undefined;
-  private output: WebMidi.MIDIOutput | undefined;
-
-  constructor(private midiSystem: MidiSystemService, private options: MidiOptions) {
-    setTimeout(this.getDevices.bind(this), 1000);
-  }
-
-  private getDevices() {
-    if (this.options.inputName) {
-      this.input = this.midiSystem.findInput(this.options.inputName);
-    }
-    if (this.options.outputName) {
-      this.output = this.midiSystem.findOutput(this.options.outputName);
-    }
-    if (this.input && this.output) {
-      this.input.onmidimessage = this.onMessage.bind(this);
+  constructor(private midiSystem: MidiSystemService,
+              private inputs: DeviceList,
+              private maps: MapList) {
+    for (let input of inputs) {
+      const inputDevice = this.midiSystem.getInputDevice(input.id);
+      if (inputDevice) {
+        inputDevice.onmidimessage = this.onMessage.bind(this, input);
+      } else {
+        console.error(`Cannot find input ${input.name}`);
+      }
     }
   }
 
-  private onMessage(event: WebMidi.MIDIMessageEvent) {
-    console.log(event.data);
-    if (this.output) {
-      this.midiSystem.sendMessage(this.output, event.data, this.options);
-    }
+  private onMessage(input: Device, event: WebMidi.MIDIMessageEvent) {
+    this.midiSystem.sendMessage(input, event.data, this.maps);
   }
 }

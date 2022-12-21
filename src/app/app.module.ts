@@ -6,6 +6,7 @@ import { AppComponent } from './app.component';
 import { MidiSystemService } from './midi-system.service';
 import { MidiMapperService } from './midi-mapper.service';
 import { MidiPlayerService } from './midi-player.service';
+import { PerformanceService } from './performance.service';
 
 @NgModule({
   declarations: [
@@ -18,7 +19,8 @@ import { MidiPlayerService } from './midi-player.service';
   providers: [
     MidiSystemService,
     MidiMapperService,
-    MidiPlayerService
+    MidiPlayerService,
+    PerformanceService
   ],
   bootstrap: [AppComponent]
 })
