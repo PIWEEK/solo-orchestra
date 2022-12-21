@@ -17,15 +17,8 @@ export class AppComponent {
               private midiMapper: MidiMapperService,
               private midiPlayer: MidiPlayerService,
               private performance: PerformanceService) {
-    this.player1 = midiPlayer.getPlayer({
-      outputName: "Synth input port (Qsynth1:0)",
-    });
-    this.player2 = midiPlayer.getPlayer({
-      outputName: "Synth input port (Qsynth1:0)",
-      // channelMap: new Map([
-      //   [1, 5],
-      // ]),
-    });
+    this.player1 = midiPlayer.getPlayer();
+    this.player2 = midiPlayer.getPlayer();
   }
 
   @HostListener("window:unload", ["$event"])

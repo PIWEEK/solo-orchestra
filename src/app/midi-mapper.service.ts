@@ -20,11 +20,11 @@ export class AngularMidiMapper {
               private inputs: DeviceList,
               private maps: MapList) {
     for (let input of inputs) {
-      const inputDevice = this.midiSystem.getInputDevice(input.id);
-      if (inputDevice) {
-        inputDevice.onmidimessage = this.onMessage.bind(this, input);
+      const inputPort = this.midiSystem.getInputPort(input.id);
+      if (inputPort) {
+        inputPort.onmidimessage = this.onMessage.bind(this, input);
       } else {
-        console.error(`Cannot find input ${input.name}`);
+        console.error(`Cannot find input ${input.portName}`);
       }
     }
   }

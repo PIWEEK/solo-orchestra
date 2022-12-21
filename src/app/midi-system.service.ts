@@ -5,18 +5,12 @@ import { Injectable } from '@angular/core';
 
 // Light wrapper of webmidi interface.
 
-export interface MidiOptions {
-  inputName?: string;
-  outputName?: string;
-  channelMap?: {number: number};
-}
-
 export type DeviceList = Device[];
 
 export interface Device {
   id: string;
   title: string;
-  name: string;
+  portName: string;
   channels: ChannelList;
 }
 
@@ -30,17 +24,21 @@ export interface Channel {
 export type MapList = Map[];
 
 export interface Map {
-  type: string;
   comments?: string;
   source?: EventSet;
   dest?: EventSet;
+  keepMapping?: boolean;  // if false, the first valid map stops check
 }
 
 export interface EventSet {
-  device?: string;
-  eventType?: string;
+  deviceId?: string;
   channel?: number | string;
+  eventType?: string;
+  noteMin?: number;
+  noteMax?: number;
 }
+
+export type Message = Uint8Array | number[];
 
 
 @Injectable({
@@ -48,8 +46,10 @@ export interface EventSet {
 })
 export class MidiSystemService {
   private midi: WebMidi.MIDIAccess | undefined;
-  private inputDevices = new Map<string, WebMidi.MIDIInput>();
-  private outputDevices = new Map<string, WebMidi.MIDIOutput>();
+  private inputs: DeviceList | undefined;
+  private outputs: DeviceList | undefined;
+  private inputPorts = new Map<string, WebMidi.MIDIInput>();
+  private outputPorts = new Map<string, WebMidi.MIDIOutput>();
 
   constructor() {
     if (navigator.requestMIDIAccess) {
@@ -68,7 +68,7 @@ export class MidiSystemService {
 
   public shutdown() {
     console.log("SHUTDOWN");
-    for (const output of this.getOutputDevices()) {
+    for (const output of this.getOutputPorts()) {
       for (let channel = 0; channel < 16; channel++) {
         const allNotesOff = [0xB0 | (channel & 0x0F), 123, 0];
         output.send(allNotesOff);
@@ -77,32 +77,34 @@ export class MidiSystemService {
   }
 
   public setDevices(inputs: DeviceList, outputs: DeviceList) {
-    // this.listDevices();
-    // this.showDevices();
+    // this.listPorts();
+    // this.showPorts();
 
-    this.inputDevices.clear();
-    this.outputDevices.clear();
+    this.inputs = inputs;
+    this.outputs = outputs;
+    this.inputPorts.clear();
+    this.outputPorts.clear();
 
     for (let input of inputs) {
-      const inputDevice = this.findInputDevice(input.name);
-      if (!inputDevice) {
-        console.error(`Cannot find input ${input.name}`);
+      const inputPort = this.findInputPort(input.portName);
+      if (!inputPort) {
+        console.error(`Cannot find input ${input.portName}`);
       } else {
-        this.inputDevices.set(input.id, inputDevice);
+        this.inputPorts.set(input.id, inputPort);
       }
     }
 
     for (let output of outputs) {
-      const outputDevice = this.findOutputDevice(output.name);
-      if (!outputDevice) {
-        console.error(`Cannot find output ${output.name}`);
+      const outputPort = this.findOutputPort(output.portName);
+      if (!outputPort) {
+        console.error(`Cannot find output ${output.portName}`);
       } else {
-        this.outputDevices.set(output.id, outputDevice);
+        this.outputPorts.set(output.id, outputPort);
       }
     }
   }
 
-  public getInputDevices() {
+  public getInputPorts() {
     if (this.midi) {
       return this.midi.inputs.values();
     } else {
@@ -110,7 +112,7 @@ export class MidiSystemService {
     }
   }
 
-  public getOutputDevices() {
+  public getOutputPorts() {
     if (this.midi) {
       return this.midi.outputs.values();
     } else {
@@ -118,24 +120,24 @@ export class MidiSystemService {
     }
   }
 
-  public listDevices() {
-    for (const input of this.getInputDevices()) {
+  public listPorts() {
+    for (const input of this.getInputPorts()) {
       console.log(`INPUT '${input.name}': ${input.id}`);
     }
-    for (const output of this.getOutputDevices()) {
+    for (const output of this.getOutputPorts()) {
       console.log(`OUTPUT '${output.name}': ${output.id}`);
     }
   }
 
-  public showDevices() {
-    for (const input of this.getInputDevices()) {
+  public showPorts() {
+    for (const input of this.getInputPorts()) {
       console.log(`INPUT PORT [type:'${input.type}']` +
                   ` id:'${input.id}'` +
                   ` manufacturer:'${input.manufacturer}'` +
                   ` name:'${input.name}'` +
                   ` version:'${input.version}'`);
     }
-    for (const output of this.getOutputDevices()) {
+    for (const output of this.getOutputPorts()) {
       console.log(`OUTPUT PORT [type:'${output.type}']` +
                   ` id:'${output.id}` +
                   ` manufacturer:'${output.manufacturer}` +
@@ -144,33 +146,57 @@ export class MidiSystemService {
     }
   }
 
-  public findInputDevice(name: string) {
-    for (let device of this.getInputDevices()) {
-      if (device.name === name) {
-        return device;
+  public findInputPort(name: string) {
+    for (let port of this.getInputPorts()) {
+      if (port.name === name) {
+        return port;
       }
     }
     return undefined;
   }
 
-  public findOutputDevice(name: string) {
-    for (let device of this.getOutputDevices()) {
-      if (device.name === name) {
-        return device;
+  public findOutputPort(name: string) {
+    for (let port of this.getOutputPorts()) {
+      if (port.name === name) {
+        return port;
       }
     }
     return undefined;
   }
 
-  public getInputDevice(id: string) {
-    return this.inputDevices.get(id);
+  public getInputDevice(id: string | undefined) {
+    if (id) {
+      return this.inputs?.find(input => (input.id === id));
+    } else {
+      return undefined;
+    }
   }
 
-  public getOutputDevice(id: string) {
-    return this.outputDevices.get(id);
+  public getOutputDevice(id: string | undefined) {
+    if (id) {
+      return this.outputs?.find(output => (output.id === id));
+    } else {
+      return undefined;
+    }
   }
 
-  public traceMessage(msg: string, message: Uint8Array | number[]) {
+  public getInputPort(id: string | undefined) {
+    if (id) {
+      return this.inputPorts.get(id);
+    } else {
+      return undefined;
+    }
+  }
+
+  public getOutputPort(id: string | undefined) {
+    if (id) {
+      return this.outputPorts.get(id);
+    } else {
+      return undefined;
+    }
+  }
+
+  public traceMessage(msg: string, message: Message) {
     let result = "";
     for (const byte of message) {
       result += byte.toString(16) + " ";
@@ -179,40 +205,128 @@ export class MidiSystemService {
   }
 
   public sendMessage(input: Device | undefined,
-                     message: Uint8Array | number[],
+                     message: Message,
                      maps: MapList) {
     if (input) {
       this.traceMessage(`SEND MESSAGE [${input.id}]`,  message);
     } else {
-      this.traceMessage("SEND MESSAGE",  message);
+      this.traceMessage("SEND MESSAGE", message);
     }
 
-    const outputDevice = this.findOutputDevice("Synth input port (Qsynth1:0)");
-    outputDevice!.send(message);
+    for (let map of maps) {
+      const message2 = this.mapMessage(input, message, map);
+      if (message2) {
+        if (map.comments) {
+          console.log(`(${map.comments})`);
+        }
+        const output = map.dest?.deviceId;
+        if (output) {
+          const outputPort = this.getOutputPort(output);
+          if (outputPort) {
+            this.traceMessage("  ->", message2);
+            outputPort.send(message2);
+          }
+        }
+        if (!map.keepMapping) {
+          break;
+        }
+      }
+    }
   }
 
-  // public sendMessage(output: WebMidi.MIDIOutput,
-  //                    message: Uint8Array | number[],
-  //                    options: MidiOptions | undefined) {
-  //   this.traceMessage("SEND MESSAGE",  message);
-  //   if (message[0] >= 0x80 && message[0] < 0xF0) {
-  //     let channel = (message[0] & 0x0F) + 1;
-  //     channel = this.mapChannel(channel, options);
-  //     message[0] = (message[0] & 0xF0) | ((channel - 1) & 0x0F);
-  //   }
-  //   output.send(message);
-  // }
-  //
-  // private mapChannel(channel: number, options: MidiOptions | undefined): number {
-  //   if (options === undefined || options.channelMap === undefined) {
-  //     return channel;
-  //   } else {
-  //     let newChannel = (options as any).channelMap[channel];
-  //     if (newChannel === undefined) {
-  //       return channel;
-  //     } else {
-  //       return newChannel;
-  //     }
-  //   }
-  // }
+  private mapMessage(input: Device | undefined,
+                     message: Message,
+                     map: Map): Message | undefined {
+
+    const message2 = message;
+
+    const srcDeviceId = map.source?.deviceId;
+    if (srcDeviceId && (srcDeviceId !== input?.id)) {
+      return undefined;
+    }
+
+    const srcChannel = this.getChannelNumber(input, map.source?.channel);
+    if (srcChannel) {
+      if (message[0] >= 0x80 && message[0] < 0xF0) {
+        let msgChannel = (message[0] & 0x0F) + 1;
+        if (srcChannel != msgChannel) {
+          return undefined;
+        }
+        const dstDeviceId = this.getOutputDevice(map.dest?.deviceId);
+        let dstChannel = this.getChannelNumber(dstDeviceId, map.dest?.channel);
+        if (dstChannel) {
+          message2[0] = (message[0] & 0xF0) | ((dstChannel - 1) & 0x0F);
+        }
+      }
+    }
+
+    const srcEventType = map.source?.eventType;
+    const msgEventType = this.getEventType(message);
+    if (srcEventType && (srcEventType !== msgEventType)) {
+      return undefined;
+    }
+
+    const srcNoteMin = map.source?.noteMin;
+    const srcNoteMax = map.source?.noteMax;
+    const msgNote = this.getNote(message);
+    if (((typeof srcNoteMin !== "undefined") ||
+         (typeof srcNoteMax !== "undefined")) &&
+        (typeof msgNote !== "undefined")) {
+      if (msgNote < (srcNoteMin || 0) ||
+          msgNote > (srcNoteMax || 127)) {
+        return undefined
+      }
+
+      const dstNoteMin = map.dest?.noteMin;
+      if ((typeof srcNoteMin !== "undefined") &&
+          (typeof dstNoteMin !== "undefined")) {
+        message2[1] = (msgNote + dstNoteMin - srcNoteMin) & 0x7F;
+      }
+    }
+
+    return message2;
+  }
+
+  private getChannelNumber(device: Device | undefined,
+                           channel: number | string | undefined): number | undefined {
+    if (!channel) {
+      return undefined;
+    }
+
+    if (typeof channel === "number") {
+      return channel;
+    }
+
+    for (let chan of device?.channels || []) {
+      if (chan.id === channel) {
+        return chan.channel;
+      }
+    }
+
+    return undefined;
+  }
+
+  private getEventType(message: Message) {
+    const msgStatus = message[0] & 0xF0;
+
+    if (msgStatus === 0x80 || msgStatus === 0x90) {
+      return "note";
+    } else if (msgStatus === 0xb0) {
+      return "control";
+    } else if (msgStatus === 0xc0) {
+      return "program";
+    } else if (msgStatus === 0xf0) {
+      return "pitch";
+    } else {
+      return "other";
+    }
+  }
+
+  private getNote(message: Message) {
+    if (this.getEventType(message) === "note") {
+      return message[1] & 0x7F;
+    } else {
+      return undefined;
+    }
+  }
 }

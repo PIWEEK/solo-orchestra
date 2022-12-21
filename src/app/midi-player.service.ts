@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 
 import MidiPlayer from "midi-player-js";
-import { MidiSystemService, MidiOptions } from './midi-system.service';
+import { MidiSystemService } from './midi-system.service';
 
 // Angular wrapper of MidiPlayer.js, that sends the midi events
 // from a midi file to MidiSystemService
@@ -13,8 +13,8 @@ export class MidiPlayerService {
 
   constructor(private midiSystem: MidiSystemService) {}
 
-  public getPlayer(options: MidiOptions): AngularMidiPlayer {
-    return new AngularMidiPlayer(this.midiSystem, options);
+  public getPlayer(): AngularMidiPlayer {
+    return new AngularMidiPlayer(this.midiSystem);
   }
 }
 
@@ -22,19 +22,22 @@ export class AngularMidiPlayer {
   private player: MidiPlayer.Player;
   private activeNotes: any[] = [];
 
-  constructor(private midiSystem: MidiSystemService, private options: MidiOptions) {
+  constructor(private midiSystem: MidiSystemService) {
     this.player = new MidiPlayer.Player();
 
     this.player.on("midiEvent", (event: MidiPlayer.Event) => {
       const message = this.event2Message(event);
       if (message && this.player.isPlaying()) {
-        this.midiSystem.sendMessage(undefined, message, []);
+        this.midiSystem.sendMessage(undefined, message, [
+          {"dest": {"deviceId": "qsynth1"}}
+        ]);
       }
     });
 
     this.player.on("endOfFile", (event: MidiPlayer.Event) => {
       console.log("END OF SONG");
       this.stopActiveNotes();
+      // setTimeout(() => this.player.play(), 0);
     });
   }
 
@@ -122,7 +125,9 @@ export class AngularMidiPlayer {
         note.noteNumber & 0x7F,
         0
       ];
-      this.midiSystem.sendMessage(undefined, message, []);
+      this.midiSystem.sendMessage(undefined, message, [
+        {"dest": {"deviceId": "qsynth1"}}
+      ]);
     }
   }
 }

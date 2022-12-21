@@ -5,7 +5,7 @@ import { MidiMapperService, AngularMidiMapper } from "./midi-mapper.service";
 import { MidiPlayerService } from "./midi-player.service";
 
 export interface Performance {
-  name: string;
+  title: string;
   inputs: DeviceList;
   outputs: DeviceList;
   songs: Song[];
@@ -51,7 +51,8 @@ export class PerformanceService {
   }
 
   private loadPerformance(performance: Performance) {
-    console.log(performance)
+    // console.log(performance)
+
     this.performance = performance;
     this.midiSystem.setDevices(performance.inputs, performance.outputs);
 

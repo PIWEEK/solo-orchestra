@@ -1,18 +1,18 @@
 {
-  "name": "PIWEEK demo",
+  "title": "PIWEEK demo",
   "inputs": [
     {
-      "id": "real-keyboard",
+      "id": "keyboard",
       "title": "Midi keyboard",
-      "name": "CHMidi-2.3 MIDI 1",
+      "portName": "CHMidi-2.3 MIDI 1",
       "channels": [
         {"id": "kbd", "channel": 1}
       ]
     },
     {
-      "id": "keyboard",
+      "id": "virtual-keyboard",
       "title": "Virtual keyboard",
-      "name": "out",
+      "portName": "out",
       "channels": [
         {"id": "kbd", "channel": 1}
       ]
@@ -22,7 +22,7 @@
     {
       "id": "qsynth1",
       "title": "Qsynth1",
-      "name": "Synth input port (Qsynth1:0)",
+      "portName": "Synth input port (Qsynth1:0)",
       "channels": [
         {"id": "strings", "channel": 1},
         {"id": "saw-wave", "channel": 2},
@@ -47,51 +47,45 @@
             {
               "id": "intro",
               "title": "Intro",
-              "filters": [
+              "maps": [
                 {
                   "comments": "Map lower half of kbd to strings raised 2 octaves",
-                  "type": "map",
                   "source": {
-                    "device": "keyboard",
-                    "eventType": "note",
+                    "deviceId": "keyboard",
                     "channel": "kbd",
-                    "range1min": 0,
-                    "range1max": 54
+                    "eventType": "note",
+                    "noteMin": 0,
+                    "noteMax": 59
                   },
                   "dest": {
-                    "device": "qsynth1",
-                    "eventType": "note",
+                    "deviceId": "qsynth1",
                     "channel": "strings",
-                    "range1min": 24,
-                    "range1max": 78
+                    "eventType": "note",
+                    "noteMin": 24
                   }
                 },
                 {
                   "comments": "Map upper half of kbd to bass lead",
-                  "type": "map",
                   "source": {
-                    "device": "keyboard",
-                    "eventType": "note",
+                    "deviceId": "keyboard",
                     "channel": "kbd",
-                    "range1min": 55,
-                    "range1max": 88
+                    "eventType": "note",
+                    "noteMin": 60,
+                    "noteMax": 127
                   },
                   "dest": {
-                    "device": "qsynth1",
-                    "eventType": "note",
+                    "deviceId": "qsynth1",
                     "channel": "bass-lead",
-                    "range1min": 55,
-                    "range1max": 88
+                    "eventType": "note"
                   }
                 },
                 {
                   "comments": "May any other kbd event to qsynth1",
-                  "type": "map",
                   "source": {
-                    "device": "keyboard"
+                    "deviceId": "keyboard"
                   },
                   "dest": {
-                    "device": "qsynth1"
+                    "deviceId": "qsynth1"
                   }
                 }
               ]
