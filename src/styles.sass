@@ -1,3 +1,35 @@
-/* You can add global styles to this file, and also import other style files */
-@import 'bulma/bulma.sass'
+// Import the initial variables
+@import "bulma/sass/utilities/initial-variables"
+@import "bulma/sass/utilities/functions"
 
+// Brand colors
+$purple: #7364db
+$brand-grey: #1f2128
+
+// See https://themeforest.net/category/ui-templates
+//     https://themeforest.net/item/frox-multipurpose-dashboard-figma-ui-kit/36589192
+//     https://gist.github.com/ysenarath/7b9cd8207bd40b99c53602e8538c3df5
+
+// // General colors for dark theme
+// $scheme-main: $grey-darker !default
+// $scheme-main-bis: $grey-dark !default
+// $scheme-main-ter: $grey-light !default
+// $scheme-invert: $white !default
+// $scheme-invert-rgb: bulmaToRGB($white) !default
+// $scheme-invert-bis: $white-bis !default
+// $scheme-invert-ter: $white-ter !default
+//
+// $background: $black !default
+//
+// // Text colors
+// $text: $white-bis !default
+// $text-invert: findColorInvert($text) !default
+// $text-light: $white !default
+// $text-strong: $white-ter !default
+
+// Customizations
+$primary: $purple
+
+$box-background-color: $grey-lighter
+
+@import 'bulma/bulma.sass'

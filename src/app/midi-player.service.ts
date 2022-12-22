@@ -13,8 +13,8 @@ export class MidiPlayerService {
 
   constructor(private midiSystem: MidiSystemService) {}
 
-  public getPlayer(): AngularMidiPlayer {
-    return new AngularMidiPlayer(this.midiSystem);
+  public getPlayer(loop: boolean): AngularMidiPlayer {
+    return new AngularMidiPlayer(this.midiSystem, loop);
   }
 }
 
@@ -22,7 +22,7 @@ export class AngularMidiPlayer {
   private player: MidiPlayer.Player;
   private activeNotes: any[] = [];
 
-  constructor(private midiSystem: MidiSystemService) {
+  constructor(private midiSystem: MidiSystemService, private loop: boolean) {
     this.player = new MidiPlayer.Player();
 
     this.player.on("midiEvent", (event: MidiPlayer.Event) => {
@@ -37,27 +37,44 @@ export class AngularMidiPlayer {
     this.player.on("endOfFile", (event: MidiPlayer.Event) => {
       console.log("END OF SONG");
       this.stopActiveNotes();
-      // setTimeout(() => this.player.play(), 0);
+      if (this.loop) {
+        setTimeout(() => this.player.play(), 0);
+      }
     });
   }
 
-  public playFile(file: File) {
-    const reader = new FileReader();
-
-    reader.onload = (event) => {
-      const data = event.target!.result;
-      if (data) {
-        this.player.loadArrayBuffer(data as ArrayBuffer);
-        this.player.play();
-      }
-    };
-
-    reader.onerror = (err) => {
-      console.log("Error ", err);
-    };
-
-    reader.readAsArrayBuffer(file);
+  public playFile(data: ArrayBuffer) {
+    this.player.loadArrayBuffer(data);
+    this.player.play();
   }
+
+  public isPlaying() {
+    return this.player.isPlaying();
+  }
+
+  public stop() {
+    console.log("STOPPED");
+    this.player.stop();
+    this.stopActiveNotes();
+  }
+
+  // public playFile(file: File) {
+  //   const reader = new FileReader();
+  //
+  //   reader.onload = (event) => {
+  //     const data = event.target!.result;
+  //     if (data) {
+  //       this.player.loadArrayBuffer(data as ArrayBuffer);
+  //       this.player.play();
+  //     }
+  //   };
+  //
+  //   reader.onerror = (err) => {
+  //     console.log("Error ", err);
+  //   };
+  //
+  //   reader.readAsArrayBuffer(file);
+  // }
 
   private event2Message(event: MidiPlayer.Event): number[] | undefined {
     if (event.name.startsWith("Note")) {

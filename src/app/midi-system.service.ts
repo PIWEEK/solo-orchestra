@@ -238,7 +238,7 @@ export class MidiSystemService {
                      message: Message,
                      map: Map): Message | undefined {
 
-    const message2 = message;
+    const message2 = [...message];
 
     const srcDeviceId = map.source?.deviceId;
     if (srcDeviceId && (srcDeviceId !== input?.id)) {

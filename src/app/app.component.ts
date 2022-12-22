@@ -1,8 +1,6 @@
 import { Component, OnInit, HostListener } from "@angular/core";
 import { MidiSystemService } from "./midi-system.service";
-import { MidiMapperService } from "./midi-mapper.service";
-import { MidiPlayerService, AngularMidiPlayer } from "./midi-player.service";
-import { PerformanceService } from "./performance.service";
+import { PerformanceService, Group, Preset } from "./performance.service";
 
 @Component({
   selector: "app-root",
@@ -10,33 +8,23 @@ import { PerformanceService } from "./performance.service";
   styleUrls: ["./app.component.sass"]
 })
 export class AppComponent {
-  private player1: AngularMidiPlayer ;
-  private player2: AngularMidiPlayer;
-
   constructor(private midiSystem: MidiSystemService,
-              private midiMapper: MidiMapperService,
-              private midiPlayer: MidiPlayerService,
-              private performance: PerformanceService) {
-    this.player1 = midiPlayer.getPlayer();
-    this.player2 = midiPlayer.getPlayer();
-  }
+              private performance: PerformanceService) {}
 
   @HostListener("window:unload", ["$event"])
   unloadHandler(event: Event) {
     this.midiSystem.shutdown();
   }
 
-  onFileSelected(event: any) {
-    const file:File = event.target.files[0];
-    if (file) {
-      this.player1.playFile(file);
-    }
+  public currentPerformance() {
+    return this.performance.currentPerformance();
   }
 
-  onFile2Selected(event: any) {
-    const file:File = event.target.files[0];
-    if (file) {
-      this.player2.playFile(file);
-    }
+  public currentSong() {
+    return this.performance.currentSong();
+  }
+
+  onPresetClicked(group: Group, preset: Preset) {
+    return this.performance.activatePreset(group, preset);
   }
 }

@@ -1,14 +1,40 @@
-<section class="section">
-  <div class="container">
-    <h1 class="title">
-      Hello World
-    </h1>
-    <p class="subtitle">
-      My first website with <strong>Bulma</strong>!
-    </p>
-    <input type="file" id="file-input" (change)=onFileSelected($event) />
-    <input type="file" id="file-input2" (change)=onFile2Selected($event) />
-  </div>
-</section>
+<ng-container *ngIf="currentPerformance() as performance">
+  <ng-container *ngIf="currentSong() as song">
+    <section class="navbar is-primary">
+      <div class="navbar-brand">
+        <div class="navbar-item">
+          <img src="/assets/img/logo.svg" />
+        </div>
+      </div>
+      <div class="navbar-menu">
+        <div class="navbar-start">
+          <div class="navbar-item">
+            <p class="song-title">{{ song.title }}</p>
+          </div>
+        </div>
+        <div class="navbar-end">
+          <div class="navbar-item">
+            <p class="performance-title">{{ performance.title }}</p>
+          </div>
+        </div>
+      </div>
+    </section>
+    <section class="section">
+      <div class="columns">
+        <div class="column" *ngFor="let group of song.groups">
+          <div class="box">
+            <h3 class="title is-4">{{ group.title }}</h3>
+            <div class="block" *ngFor="let preset of group.presets">
+              <button class="button is-link preset-btn"
+                (click)="onPresetClicked(group, preset)">
+                {{ preset.title }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </ng-container>
+</ng-container>
 
 <router-outlet></router-outlet>

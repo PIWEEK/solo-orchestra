@@ -29,6 +29,10 @@ export class AngularMidiMapper {
     }
   }
 
+  public setMaps(maps: MapList) {
+    this.maps = maps;
+  }
+
   private onMessage(input: Device, event: WebMidi.MIDIMessageEvent) {
     this.midiSystem.sendMessage(input, event.data, this.maps);
   }

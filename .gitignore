@@ -1,5 +1,6 @@
 # See http://help.github.com/ignore-files/ for more about ignoring files.
-midis/*
+src/assets/performance.json
+src/assets/performance/*
 
 # Compiled output
 /dist
