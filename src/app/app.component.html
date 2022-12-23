@@ -25,7 +25,7 @@
           <div class="box">
             <h3 class="title is-4">{{ group.title }}</h3>
             <div class="block" *ngFor="let preset of group.presets">
-              <button class="button is-link preset-btn"
+              <button [class]="presetClass(group, preset)"
                 (click)="onPresetClicked(group, preset)">
                 {{ preset.title }}
               </button>

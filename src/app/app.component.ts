@@ -24,6 +24,14 @@ export class AppComponent {
     return this.performance.currentSong();
   }
 
+  public presetClass(group: Group, preset: Preset) {
+    if (this.performance.isActive(group, preset)) {
+      return "button preset-btn is-primary";
+    } else {
+      return "button preset-btn is-link";
+    }
+  }
+
   onPresetClicked(group: Group, preset: Preset) {
     return this.performance.activatePreset(group, preset);
   }

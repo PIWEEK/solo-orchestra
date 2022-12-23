@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 
 import MidiPlayer from "midi-player-js";
-import { MidiSystemService } from './midi-system.service';
+import { MidiSystemService, MapList } from './midi-system.service';
 
 // Angular wrapper of MidiPlayer.js, that sends the midi events
 // from a midi file to MidiSystemService
@@ -13,8 +13,8 @@ export class MidiPlayerService {
 
   constructor(private midiSystem: MidiSystemService) {}
 
-  public getPlayer(loop: boolean): AngularMidiPlayer {
-    return new AngularMidiPlayer(this.midiSystem, loop);
+  public getPlayer(loop: boolean, maps: MapList): AngularMidiPlayer {
+    return new AngularMidiPlayer(this.midiSystem, loop, maps);
   }
 }
 
@@ -22,15 +22,15 @@ export class AngularMidiPlayer {
   private player: MidiPlayer.Player;
   private activeNotes: any[] = [];
 
-  constructor(private midiSystem: MidiSystemService, private loop: boolean) {
+  constructor(private midiSystem: MidiSystemService,
+              private loop: boolean,
+              private maps: MapList) {
     this.player = new MidiPlayer.Player();
 
     this.player.on("midiEvent", (event: MidiPlayer.Event) => {
       const message = this.event2Message(event);
       if (message && this.player.isPlaying()) {
-        this.midiSystem.sendMessage(undefined, message, [
-          {"dest": {"deviceId": "qsynth1"}}
-        ]);
+        this.midiSystem.sendMessage(undefined, message, maps);
       }
     });
 

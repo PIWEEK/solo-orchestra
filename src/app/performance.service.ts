@@ -29,9 +29,15 @@ export interface Preset {
   id: string;
   title: string;
   isDefault: boolean;
-  maps: MapList;
+  maps?: MapList;
   midiUrl?: string;
   loop?: boolean;
+  trigger?: Trigger;
+}
+
+export interface Trigger {
+  groupId: string;
+  presetId: string;
 }
 
 interface GroupHandler {
@@ -42,6 +48,7 @@ interface GroupHandler {
 interface PresetHandler {
   player?: AngularMidiPlayer;
   file?: ArrayBuffer;
+  isActive: boolean;
 }
 
 @Injectable({
@@ -77,11 +84,28 @@ export class PerformanceService {
   public activatePreset(group: Group, preset: Preset) {
     const groupHandler = this.groupHandlers.get(group.id);
     if (groupHandler) {
-      if (group.type === "mapper") {
-        groupHandler.mapper!.setMaps(preset.maps);
-      } else if (group.type === "player") {
-        const presetHandler = groupHandler.presetHandlers!.get(preset.id);
-        if (presetHandler) {
+      const presetHandler = groupHandler.presetHandlers!.get(preset.id);
+      if (presetHandler) {
+
+        if (group.exclusive) {
+          for (const preset2 of group.presets) {
+            if (preset2 !== preset) {
+              if (this.isActive(group, preset2)) {
+                this.activatePreset(group, preset2);
+              }
+            }
+          }
+        }
+
+        if (group.type === "mapper") {
+          if (presetHandler.isActive) {
+            groupHandler.mapper!.setMaps([]);
+            presetHandler.isActive = false;
+          } else {
+            groupHandler.mapper!.setMaps(preset.maps);
+            presetHandler.isActive = true;
+          }
+        } else if (group.type === "player") {
           const player = presetHandler.player!;
           if (player.isPlaying()) {
             player.stop();
@@ -89,8 +113,36 @@ export class PerformanceService {
             player.playFile(presetHandler.file!);
           }
         }
+
+        if (preset.trigger) {
+          const group2 = this.groupById(preset.trigger.groupId);
+          if (group2) {
+            const preset2 = this.presetById(group2, preset.trigger.presetId);
+            if (preset2) {
+              if (!this.isActive(group2, preset)) {
+                this.activatePreset(group2, preset2);
+              }
+            }
+          }
+        }
       }
     }
+  }
+
+  public isActive(group: Group, preset: Preset) {
+    const groupHandler = this.groupHandlers.get(group.id);
+    if (groupHandler) {
+      const presetHandler = groupHandler.presetHandlers!.get(preset.id);
+      if (presetHandler) {
+        if (group.type === "mapper") {
+          return presetHandler.isActive;
+        } else {
+          return presetHandler.player!.isPlaying();
+        }
+      }
+    }
+
+    return false;
   }
 
   private loadPerformance(performance: Performance) {
@@ -103,7 +155,7 @@ export class PerformanceService {
       let mapper;
       if (group.type === "mapper") {
         const preset = this.defaultPreset(group);
-        const maps = preset ? preset.maps : [];
+        const maps = preset?.maps || [];
         mapper = this.midiMapper.getMapper(performance.inputs, maps);
       }
 
@@ -111,12 +163,14 @@ export class PerformanceService {
       for (const preset of group.presets) {
         let player;
         if (group.type === "player") {
-          player = this.midiPlayer.getPlayer(preset.loop || false);
+          player = this.midiPlayer.getPlayer(preset.loop || false,
+                                             preset.maps || []);
         }
 
         const presetHandler: PresetHandler = {
           player: player,
-          file: undefined
+          file: undefined,
+          isActive: !!preset.isDefault
         }
 
         if (group.type === "player" && preset.midiUrl) {
@@ -141,4 +195,11 @@ export class PerformanceService {
     return group.presets.find((preset) => preset.isDefault);
   }
 
+  private groupById(groupId: string): Group | undefined {
+    return this.groups()!.find((group) => group.id === groupId);
+  }
+
+  private presetById(group: Group, presetId: string): Preset | undefined {
+    return group.presets.find((preset) => preset.id === presetId);
+  }
 }

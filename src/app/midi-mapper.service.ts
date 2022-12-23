@@ -29,8 +29,8 @@ export class AngularMidiMapper {
     }
   }
 
-  public setMaps(maps: MapList) {
-    this.maps = maps;
+  public setMaps(maps: MapList | undefined) {
+    this.maps = maps || [];
   }
 
   private onMessage(input: Device, event: WebMidi.MIDIMessageEvent) {

@@ -216,9 +216,6 @@ export class MidiSystemService {
     for (let map of maps) {
       const message2 = this.mapMessage(input, message, map);
       if (message2) {
-        if (map.comments) {
-          console.log(`(${map.comments})`);
-        }
         const output = map.dest?.deviceId;
         if (output) {
           const outputPort = this.getOutputPort(output);
