@@ -1,6 +1,10 @@
 /// <reference types="webmidi" />
 // Triple slash commands are interpreted by typescript type system
 
+// --------------
+// Try to replace this with webmidi.js library (https://webmidijs.org/docs/)
+// --------------
+
 import { Injectable } from '@angular/core';
 
 // Light wrapper of webmidi interface.
@@ -28,6 +32,7 @@ export interface Map {
   source?: EventSet;
   dest?: EventSet;
   keepMapping?: boolean;  // if false, the first valid map stops check
+  ignoreVelocity?: boolean;
 }
 
 export interface EventSet {
@@ -77,7 +82,7 @@ export class MidiSystemService {
   }
 
   public setDevices(inputs: DeviceList, outputs: DeviceList) {
-    // this.listPorts();
+    this.listPorts();
     // this.showPorts();
 
     this.inputs = inputs;
@@ -90,6 +95,7 @@ export class MidiSystemService {
       if (!inputPort) {
         console.error(`Cannot find input ${input.portName}`);
       } else {
+        console.log(`Connected to input ${input.portName}`);
         this.inputPorts.set(input.id, inputPort);
       }
     }
@@ -99,6 +105,7 @@ export class MidiSystemService {
       if (!outputPort) {
         console.error(`Cannot find output ${output.portName}`);
       } else {
+        console.log(`Connected to output ${output.portName}`);
         this.outputPorts.set(output.id, outputPort);
       }
     }
@@ -121,15 +128,18 @@ export class MidiSystemService {
   }
 
   public listPorts() {
+    console.log("#### List of ports:");
     for (const input of this.getInputPorts()) {
-      console.log(`INPUT '${input.name}': ${input.id}`);
+      console.log(`  INPUT '${input.name}': #${input.id.substring(input.id.length - 5)}`);
     }
     for (const output of this.getOutputPorts()) {
-      console.log(`OUTPUT '${output.name}': ${output.id}`);
+      console.log(`  OUTPUT '${output.name}': #${output.id.substring(output.id.length - 5)}`);
     }
+    console.log("  (end)");
   }
 
   public showPorts() {
+    console.log("#### Ports info:");
     for (const input of this.getInputPorts()) {
       console.log(`INPUT PORT [type:'${input.type}']` +
                   ` id:'${input.id}'` +
@@ -220,6 +230,7 @@ export class MidiSystemService {
         if (output) {
           const outputPort = this.getOutputPort(output);
           if (outputPort) {
+            console.log("outputPort", outputPort.name);
             this.traceMessage("  ->", message2);
             outputPort.send(message2);
           }
@@ -263,21 +274,27 @@ export class MidiSystemService {
       return undefined;
     }
 
-    const srcNoteMin = map.source?.noteMin;
-    const srcNoteMax = map.source?.noteMax;
-    const msgNote = this.getNote(message);
-    if (((typeof srcNoteMin !== "undefined") ||
-         (typeof srcNoteMax !== "undefined")) &&
-        (typeof msgNote !== "undefined")) {
-      if (msgNote < (srcNoteMin || 0) ||
-          msgNote > (srcNoteMax || 127)) {
-        return undefined
+    if (msgEventType === "note") {
+      const srcNoteMin = map.source?.noteMin;
+      const srcNoteMax = map.source?.noteMax;
+      const msgNote = this.getNote(message);
+      if (((typeof srcNoteMin !== "undefined") ||
+           (typeof srcNoteMax !== "undefined")) &&
+          (typeof msgNote !== "undefined")) {
+        if (msgNote < (srcNoteMin || 0) ||
+            msgNote > (srcNoteMax || 127)) {
+          return undefined
+        }
+
+        const dstNoteMin = map.dest?.noteMin;
+        if ((typeof srcNoteMin !== "undefined") &&
+            (typeof dstNoteMin !== "undefined")) {
+          message2[1] = (msgNote + dstNoteMin - srcNoteMin) & 0x7F;
+        }
       }
 
-      const dstNoteMin = map.dest?.noteMin;
-      if ((typeof srcNoteMin !== "undefined") &&
-          (typeof dstNoteMin !== "undefined")) {
-        message2[1] = (msgNote + dstNoteMin - srcNoteMin) & 0x7F;
+      if (map.ignoreVelocity) {
+        message2[2] = 0x7f;
       }
     }
 

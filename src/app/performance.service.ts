@@ -4,6 +4,10 @@ import { MidiSystemService, DeviceList, MapList } from "./midi-system.service";
 import { MidiMapperService, AngularMidiMapper } from "./midi-mapper.service";
 import { MidiPlayerService, AngularMidiPlayer } from "./midi-player.service";
 
+// const PERFORMANCE = "piweek";
+// const PERFORMANCE = "cormallen";
+const PERFORMANCE = "aldaron";
+
 export interface Performance {
   title: string;
   inputs: DeviceList;
@@ -63,7 +67,7 @@ export class PerformanceService {
               private midiMapper: MidiMapperService,
               private midiPlayer: MidiPlayerService) {
     setTimeout(() => {
-      fetch("/assets/performance.json")
+      fetch("/assets/performance-" + PERFORMANCE + ".json")
         .then((result) => result.json())
         .then(this.loadPerformance.bind(this));
     }, 500);
