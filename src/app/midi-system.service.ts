@@ -294,7 +294,7 @@ export class MidiSystemService {
       }
 
       if (map.ignoreVelocity) {
-        message2[2] = 0x7f;
+        message2[2] = 0x3f;
       }
     }
 
